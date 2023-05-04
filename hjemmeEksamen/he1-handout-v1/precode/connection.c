@@ -9,6 +9,15 @@
  */
 #include "connection.h"
 
+void check_error(int val, char* msg) {
+  if (val < 0) {
+    fprintf(stderr, "%s failed. Errno-value: (%d)\n", msg, errno);
+    fprintf(stderr, "%s : %s\n", msg, (char*) strerror(errno));
+    exit(EXIT_FAILURE);
+    }
+  return;
+}
+
 int tcp_connect( char* hostname, int port )
 {
     /* TO BE IMPLEMENTED */

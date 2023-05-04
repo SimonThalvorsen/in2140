@@ -1,6 +1,16 @@
 #pragma once
 
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* The function takes a hostname in dotted decimal format and a port number.
  * It returns a socket if it is able to connect to a TCP server socket.
