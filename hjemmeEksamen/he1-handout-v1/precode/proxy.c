@@ -15,6 +15,7 @@
 #include "recordFromFormat.h"
 
 #include <arpa/inet.h>
+#include <stddef.h>
 #include <sys/errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,9 +26,9 @@
 /* This struct should contain the information that you want
  * keep for one connected client.
  */
-struct Client
-{
-    /* your choice of variables */
+struct Client {
+    struct Client *next;
+    int sock;
 };
 
 typedef struct Client Client;
@@ -50,9 +51,32 @@ void usage( char* cmd )
  *
  * *** The parameters and return values of this functions can be changed. ***
  */
-void handleNewClient( int server_sock )
-{
+void handleNewClient( int server_sock, struct Client prev ) {
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
+
+    //Accept connection
+    int client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_addr_len);
+    if (client_sock == -1) {
+        perror("Error accepting client connection. Function: handleNewClient");
+        return;
+    } 
+    
+    //Create new client
+    Client *client = malloc(sizeof(Client));
+    if (!client) {
+        perror("Could not allocate memory for new client.");
+        return;
+    }
+    prev.next = client;
+    client->next = NULL;
+    client->sock = client_sock;
+
+    //Log info
+    printf("New client connected. Socket no. : %d\n", client->sock);
+    
 }
+
 
 /*
  * This function is called when a connection is broken by one of the connecting
@@ -60,9 +84,31 @@ void handleNewClient( int server_sock )
  * are released.
  *
  * *** The parameters and return values of this functions can be changed. ***
+ * If start is removed, new start is returned. Else start will be returned.
  */
-void removeClient( Client* client )
-{
+struct Client*  removeClient( Client* client, Client* start ) {
+    if (!client) {
+        return start;
+    } 
+    struct Client* curr;
+    if (start->sock == client->sock) {
+        curr = client->next;
+        close(client->sock);
+        free(client);
+        return curr;
+    }
+    curr = start; 
+    while (curr) {
+        if (curr->next || curr->next->sock == client->sock) {
+            curr->next = curr->next->next;
+            close(curr->next->sock);
+            free(curr->next);
+            return start;
+        } else {
+            curr = curr->next;
+        }
+    }
+    return start;
 }
 
 /*

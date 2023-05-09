@@ -11,6 +11,7 @@
 #include <sys/errno.h>
 #include <string.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 BinaryFile* bin_read_open( char* filename )
 {
