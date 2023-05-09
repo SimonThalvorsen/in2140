@@ -25,6 +25,7 @@
 
 /* This struct should contain the information that you want
  * keep for one connected client.
+ * Clients are used as a linked list/stack.
  */
 struct Client {
     struct Client *next;
@@ -51,7 +52,7 @@ void usage( char* cmd )
  *
  * *** The parameters and return values of this functions can be changed. ***
  */
-void handleNewClient( int server_sock, struct Client prev ) {
+ struct Client* handleNewClient( int server_sock, struct Client* start ) {
     struct sockaddr_in client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
 
@@ -59,21 +60,23 @@ void handleNewClient( int server_sock, struct Client prev ) {
     int client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_addr_len);
     if (client_sock == -1) {
         perror("Error accepting client connection. Function: handleNewClient");
-        return;
+        return start;
     } 
     
     //Create new client
     Client *client = malloc(sizeof(Client));
     if (!client) {
         perror("Could not allocate memory for new client.");
-        return;
+        return start;
     }
-    prev.next = client;
-    client->next = NULL;
+    client->next = start;
     client->sock = client_sock;
 
     //Log info
     printf("New client connected. Socket no. : %d\n", client->sock);
+    
+    //returns new client* to be used as start
+    return client;
     
 }
 
@@ -87,8 +90,10 @@ void handleNewClient( int server_sock, struct Client prev ) {
  * If start is removed, new start is returned. Else start will be returned.
  */
 struct Client*  removeClient( Client* client, Client* start ) {
-    if (!client) {
-        return start;
+    if (!client || !start) {
+        perror("Either you have no clients or the client to be removed doesent exist");
+        return client ? client : start;
+
     } 
     struct Client* curr;
     if (start->sock == client->sock) {
@@ -128,8 +133,8 @@ struct Client*  removeClient( Client* client, Client* start ) {
  *
  * *** The parameters and return values of this functions can be changed. ***
  */
-void forwardMessage( Record* msg )
-{
+void forwardMessage( Record* msg ) {
+
 }
 
 /*
@@ -148,12 +153,10 @@ void forwardMessage( Record* msg )
  *
  * *** The parameters and return values of this functions can be changed. ***
  */
-void handleClient( Client* client )
-{
+void handleClient( Client* client ) {
 }
 
-int main( int argc, char* argv[] )
-{
+int main( int argc, char* argv[] ) {
     int port;
     int server_sock;
 
