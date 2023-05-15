@@ -8,6 +8,12 @@
  * You can add function, definition etc. as required.
  */
 #include "connection.h"
+#include <bits/types/struct_timeval.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 
 void check_error(int val, char* msg) {
   if (val < 0) {
@@ -64,9 +70,7 @@ int tcp_write_loop( int sock, char* buffer, int bytes ) {
     int written_bytes = 0;
     while (written_bytes < bytes) {
         int write = tcp_write(sock, buffer, bytes-written_bytes);
-        if (write < 0) {
-            return write;
-        }
+        if (write < 0) { return write; }
         written_bytes += write;
     }
     return written_bytes;
@@ -77,7 +81,25 @@ void tcp_close( int sock ) {
 }
 
 int tcp_create_and_listen( int port ) {
-    return 0;
+    struct sockaddr_in server_addr;
+    int sock;
+    int rc;
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        fprintf(stderr, "Error tcp_create_and_listen %s\n", strerror(errno));
+        return -1;
+    }
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    rc = bind(sock, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    if (rc < 0) {
+        fprintf(stderr, "Error tcp_create_and_listen: Bind : %s\n", strerror(errno));
+        return -1;
+    }
+    rc = listen(sock, 26); // Uncertain about N connection request, placeholder 26, since 26 is max clients
+    return sock;
 }
 
 int tcp_accept( int server_sock ) {
@@ -90,12 +112,21 @@ int tcp_accept( int server_sock ) {
 }
 
 int tcp_wait( fd_set* waiting_set, int wait_end ) {
-    /* TO BE IMPLEMENTED */
-    return 0;
+    int wSet = select(wait_end, waiting_set, NULL, NULL, NULL);
+    if (wSet < 0) {
+        fprintf(stderr, "Error tcp_wait: %s\n", strerror(errno));
+    }
+    return wSet;
 }
 
 int tcp_wait_timeout( fd_set* waiting_set, int wait_end, int seconds ) {
-    /* TO BE IMPLEMENTED */
-    return 0;
+    struct timeval timeval;
+    timeval.tv_sec = seconds;
+    int wSet = select(wait_end, waiting_set, NULL, NULL, &timeval);
+    if (wSet < 0) {
+        fprintf(stderr, "Error tcp_wait_timeout: %s\n", strerror(errno));
+    }
+    return wSet;
+
 }
 
