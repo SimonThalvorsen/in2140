@@ -99,9 +99,75 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
     return rec;
 }
 
-Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread )
-{
-    /* TO BE IMPLEMENTED */
-    return NULL;
+
+Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
+    struct Record *record = newRecord(); 
+    
+    char flag;
+    memcpy(&flag, buffer, 1);
+    buffer += sizeof(flag);
+    *bytesread +=  sizeof(flag);
+    
+    if (flag & FLAG_SRC) {
+        char src;
+        memcpy(&src, buffer, 1);
+        buffer += sizeof(char);
+        *bytesread += sizeof(char);
+        setSource(record, src);
+    }
+    if (flag & FLAG_DST) {
+        char dst;
+        memcpy(&dst, buffer, 1);
+        buffer += sizeof(char);
+        *bytesread += sizeof(char);
+        setDest(record, dst);
+    }
+    if (flag & FLAG_USERNAME){
+        uint32_t nameLen;
+        memcpy(&nameLen, buffer, sizeof(uint32_t));
+        buffer += sizeof(uint32_t);
+        *bytesread += sizeof(uint32_t);
+        char *name[nameLen];
+        memcpy(name, buffer, nameLen);
+        buffer += nameLen;
+        *bytesread += nameLen;
+        setUsername(record, *name);
+    }
+    if (flag & FLAG_ID) {
+        uint32_t id;
+        memcpy(&id, buffer, sizeof(uint32_t));
+        *bytesread += sizeof(uint32_t);
+        buffer += sizeof(uint32_t);
+        setId(record, id);
+    }
+    if (flag & FLAG_GROUP) {
+        uint32_t group;
+        memcpy(&group, buffer, sizeof(uint32_t));
+        buffer += sizeof(uint32_t);
+        *bytesread += sizeof(uint32_t);
+    }
+    if (flag & FLAG_SEMESTER) {
+        uint8_t semester;
+        memcpy(&semester, buffer, sizeof(uint8_t));
+        buffer += sizeof(uint8_t);
+        *bytesread += sizeof(uint8_t);
+        setSemester(record, semester);
+    }
+    if (flag & FLAG_GRADE) {
+        Grade grade;
+        memcpy(&grade, buffer, sizeof(Grade));
+        buffer += sizeof(Grade);
+        *bytesread += sizeof(Grade); 
+        setGrade(record, grade);
+    } 
+    if (flag & FLAG_COURSES) {
+        uint16_t courses;
+        memcpy(&courses, buffer, sizeof(uint16_t));
+        buffer += sizeof(uint16_t);
+        *bytesread += sizeof(uint16_t);
+        setCourse(record, courses);
+    }
+
+    return record;
 }
 

@@ -8,11 +8,6 @@
  * You can add function, definition etc. as required.
  */
 #include "connection.h"
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
 
 void check_error(int val, char* msg) {
   if (val < 0) {
@@ -27,7 +22,6 @@ int tcp_connect( char* hostname, int port ) {
     struct sockaddr_in server_addr;
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
-        // perror("Error creating socket\n"); 
         fprintf(stderr, "Error creating socket\n");
         return -1;
     }
@@ -46,18 +40,36 @@ int tcp_connect( char* hostname, int port ) {
 }
 
 int tcp_read( int sock, char* buffer, int n ) {
-    /* TO BE IMPLEMENTED */
-    return 0;
+    int bytes = read(sock, buffer, n);
+    if (bytes == 0) {
+        fprintf(stderr, "Error reading socket: EOF");
+        return bytes;
+    } else if (bytes < 0) {
+        fprintf(stderr, "Error reading from socket: %s\n", strerror(errno));
+        return bytes;
+    }
+    return bytes;
 }
 
 int tcp_write( int sock, char* buffer, int bytes ) {
-    /* TO BE IMPLEMENTED */
-    return 0;
+    int written_bytes = write(sock, buffer, bytes);
+    if (write < 0) {
+        fprintf(stderr, "Error writing to socket: %s\n", strerror(errno));
+        return written_bytes;
+    }
+    return written_bytes;
 }
 
 int tcp_write_loop( int sock, char* buffer, int bytes ) {
-    /* TO BE IMPLEMENTED */
-    return 0;
+    int written_bytes = 0;
+    while (written_bytes < bytes) {
+        int write = tcp_write(sock, buffer, bytes-written_bytes);
+        if (write < 0) {
+            return write;
+        }
+        written_bytes += write;
+    }
+    return written_bytes;
 }
 
 void tcp_close( int sock ) {
@@ -65,13 +77,16 @@ void tcp_close( int sock ) {
 }
 
 int tcp_create_and_listen( int port ) {
-    /* TO BE IMPLEMENTED */
     return 0;
 }
 
 int tcp_accept( int server_sock ) {
-    /* TO BE IMPLEMENTED */
-    return 0;
+    int newSock;
+    newSock = accept(server_sock, NULL, NULL);
+    if (newSock < 0) {
+        fprintf(stderr, "Error accepting socket: %s\n", strerror(errno));
+    }
+    return newSock;
 }
 
 int tcp_wait( fd_set* waiting_set, int wait_end ) {
