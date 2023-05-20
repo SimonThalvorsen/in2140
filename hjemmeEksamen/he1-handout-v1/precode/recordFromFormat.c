@@ -9,6 +9,7 @@
  */
 #include "recordFromFormat.h"
 #include "record.h"
+#include <netinet/in.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -123,24 +124,27 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         setDest(record, dst);
     }
     if (flag & FLAG_USERNAME){
+        size_t nameSize;
         uint32_t nameLen;
-        memcpy(&nameLen, buffer, sizeof(uint32_t));
+        memcpy(&nameSize, buffer, sizeof(uint32_t));
+        nameLen = htonl(nameSize);
         buffer += sizeof(uint32_t);
         *bytesread += sizeof(uint32_t);
-        char *name[nameLen];
+
+        char *name[nameLen]; //+1 ???
         memcpy(name, buffer, nameLen);
         buffer += nameLen;
         *bytesread += nameLen;
         setUsername(record, *name);
     }
-    if (flag & FLAG_ID) {
+    if (flag & FLAG_ID) { //Nothl??1
         uint32_t id;
         memcpy(&id, buffer, sizeof(uint32_t));
         *bytesread += sizeof(uint32_t);
         buffer += sizeof(uint32_t);
         setId(record, id);
     }
-    if (flag & FLAG_GROUP) {
+    if (flag & FLAG_GROUP) {// Ntohl???
         uint32_t group;
         memcpy(&group, buffer, sizeof(uint32_t));
         buffer += sizeof(uint32_t);

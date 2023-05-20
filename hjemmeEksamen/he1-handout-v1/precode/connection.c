@@ -8,12 +8,12 @@
  * You can add function, definition etc. as required.
  */
 #include "connection.h"
-#include <bits/types/struct_timeval.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 void check_error(int val, char* msg) {
   if (val < 0) {
@@ -41,7 +41,6 @@ int tcp_connect( char* hostname, int port ) {
         close(sock);
         return -1;
     }
-
     return sock;
 }
 
@@ -112,21 +111,28 @@ int tcp_accept( int server_sock ) {
 }
 
 int tcp_wait( fd_set* waiting_set, int wait_end ) {
-    int wSet = select(wait_end, waiting_set, NULL, NULL, NULL);
-    if (wSet < 0) {
+    printf("jeg venter som faen\n");
+    int ret = select(wait_end, waiting_set, NULL, NULL, NULL);
+    printf("jeg har venta som faaaen %d\n", ret);
+    if (ret < 0) {
         fprintf(stderr, "Error tcp_wait: %s\n", strerror(errno));
     }
-    return wSet;
+    return ret;
 }
 
 int tcp_wait_timeout( fd_set* waiting_set, int wait_end, int seconds ) {
+    printf("HUBBA HUBBA\n");
     struct timeval timeval;
     timeval.tv_sec = seconds;
-    int wSet = select(wait_end, waiting_set, NULL, NULL, &timeval);
-    if (wSet < 0) {
-        fprintf(stderr, "Error tcp_wait_timeout: %s\n", strerror(errno));
+    int ret;
+    printf("set: %d\n", wait_end);
+    printf("sec     : %d\n", seconds);
+
+    ret = select(wait_end, waiting_set, NULL, NULL, &timeval);
+
+    printf("heisan hoop jeg har ret verdi: %d\n", ret);
+    if (ret < 0) {
+        fprintf(stderr, "Error tcp_wait_timeout\nSelect failed: %s\n", strerror(errno));
     }
-    return wSet;
-
+    return ret;
 }
-

@@ -19,6 +19,7 @@
 #include <sys/errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <string.h>
@@ -29,10 +30,69 @@
  */
 struct Client {
     struct Client *next;
-    int sock;
+    int fd;
+    char ID, type;
 };
 
+struct Client *start = NULL;
+int numClients = 0;
+
+struct Client* getFirst() {
+    return start;
+}
+void push(struct Client *c) {
+    struct Client *tmp = start;
+    start = c;
+    start->next = tmp;
+}
+struct Client* pop() {
+    if (start) {
+        struct Client *tmp = start;
+        start = start->next;
+        return tmp;
+    }
+    return NULL;
+}
+struct Client* findByFD(int fd) {
+    if (start->fd == fd) { return start; }
+    struct Client *tmp = start;
+    while (tmp->fd != fd) {
+        tmp = tmp->next;
+        if (!tmp) { return NULL; }
+    }
+    return (tmp->fd == start->fd) ? NULL : tmp;
+}
+struct Client* findByID(char ID) {
+    if (start->ID == ID) { return start; }
+    struct Client *tmp = start;
+    while (tmp->ID != ID) {
+        tmp = tmp->next;
+        if (!tmp) { return NULL; }
+    }
+    return (tmp->ID == start->ID) ? NULL : tmp;
+}
+void stackRemove(struct Client *c) {
+    if (c->next == NULL) { 
+        free(c);
+        return;
+        }
+
+    struct Client *tmp = c->next;
+
+    if (start == c) { 
+        free(start);
+        start = tmp;
+        }
+    c->fd = tmp->fd;
+    c->ID = tmp->ID;
+    c->type = tmp->type;
+    c->next = tmp->next;
+    free(tmp);
+}
+
+
 typedef struct Client Client;
+
 
 void usage( char* cmd )
 {
@@ -52,32 +112,30 @@ void usage( char* cmd )
  *
  * *** The parameters and return values of this functions can be changed. ***
  */
- struct Client* handleNewClient( int server_sock, struct Client* start ) {
-    struct sockaddr_in client_addr;
-    socklen_t client_addr_len = sizeof(client_addr);
-
-    //Accept connection
-    int client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_addr_len);
-    if (client_sock == -1) {
-        perror("Error accepting client connection. Function: handleNewClient");
-        return start;
-    } 
-    
-    //Create new client
-    Client *client = malloc(sizeof(Client));
-    if (!client) {
-        perror("Could not allocate memory for new client.");
-        return start;
+ int handleNewClient( int server_sock ) {
+    char buffer[sizeof(char)];
+    int fd;
+    int read;
+    fd = tcp_accept(server_sock);
+    printf("HASDASD sicksock 3!=%d\n", fd);
+    if (fd < 0) {
+        fprintf(stderr, "handleNewClient: %s\n", strerror(errno));
+        return -1;
     }
-    client->next = start;
-    client->sock = client_sock;
+    struct Client *c;
 
-    //Log info
-    printf("New client connected. Socket no. : %d\n", client->sock);
+    c->fd = fd;
+
+    read = tcp_read(fd, buffer, 1);
+    memcpy(&c->type, buffer, 1);
     
-    //returns new client* to be used as start
-    return client;
-    
+    read = tcp_read(fd, buffer, 1);
+    memcpy(&c->ID, buffer, 1);
+
+    push(c);
+    printf("HASDASD sicksosdsadasdasdck 3!=%d\n", fd);
+    printf("clientes socke sicksock 3!=%d\n", c->fd);
+    return fd;
 }
 
 
@@ -87,33 +145,9 @@ void usage( char* cmd )
  * are released.
  *
  * *** The parameters and return values of this functions can be changed. ***
- * If start is removed, new start is returned. Else start will be returned.
  */
-struct Client*  removeClient( Client* client, Client* start ) {
-    if (!client || !start) {
-        perror("Either you have no clients or the client to be removed doesent exist");
-        return client ? client : start;
-
-    } 
-    struct Client* curr;
-    if (start->sock == client->sock) {
-        curr = client->next;
-        close(client->sock);
-        free(client);
-        return curr;
-    }
-    curr = start; 
-    while (curr) {
-        if (curr->next || curr->next->sock == client->sock) {
-            curr->next = curr->next->next;
-            close(curr->next->sock);
-            free(curr->next);
-            return start;
-        } else {
-            curr = curr->next;
-        }
-    }
-    return start;
+void removeClient( Client* client ) {
+    stackRemove(client);
 }
 
 /*
@@ -134,7 +168,30 @@ struct Client*  removeClient( Client* client, Client* start ) {
  * *** The parameters and return values of this functions can be changed. ***
  */
 void forwardMessage( Record* msg ) {
+    char *buffer;
+    int *bufsiz;
+    if (!msg) { deleteRecord(msg); }
+    struct Client *dest = findByID(msg->dest);
+    
+    if (dest->type == 'X') {
+        buffer = recordToXML(msg, bufsiz);
+        if (buffer) {
+        tcp_write(dest->fd, buffer, *bufsiz);
+        }
 
+        clearRecord(msg);
+        free(msg);
+    } else if (dest->type == 'B') {
+        buffer = recordToBinary(msg, bufsiz);
+        if (buffer) {
+        tcp_write(dest->fd, buffer, *bufsiz);
+        }
+
+        clearRecord(msg);
+        free(msg);
+    }
+    deleteRecord(msg);
+    //free(dest);
 }
 
 /*
@@ -154,6 +211,27 @@ void forwardMessage( Record* msg ) {
  * *** The parameters and return values of this functions can be changed. ***
  */
 void handleClient( Client* client ) {
+    if (client == NULL) {
+        fprintf(stderr, "handleClient: Client is null");
+        return; }
+
+    int read;
+    int bytesRead = 0;
+    char buf[BUFSIZ];
+    
+    printf("HEI JEG LESER\n");
+    read = tcp_read(client->ID, buf, bytesRead);
+    printf("HEI JEG HAR LESET %s\n", buf);
+
+    if (client->type == 'X') {
+        forwardMessage(XMLtoRecord(buf, sizeof(buf), &bytesRead));
+    } else if (client->type == 'B') {
+        forwardMessage(BinaryToRecord(buf, sizeof(buf), &bytesRead));
+    }
+    
+
+    // When done reading and all records has been sent
+    removeClient(client);
 }
 
 int main( int argc, char* argv[] ) {
@@ -169,8 +247,14 @@ int main( int argc, char* argv[] ) {
 
     server_sock = tcp_create_and_listen( port );
     if( server_sock < 0 ) exit( -1 );
+    int max_fd = server_sock; 
 
     /* add your initialization code */
+    fd_set current_sockets, ready_sockets;
+
+
+    FD_ZERO(&current_sockets);
+    FD_SET(server_sock, &current_sockets);
     
     /*
      * The following part is the event loop of the proxy. It waits for new connections,
@@ -182,13 +266,48 @@ int main( int argc, char* argv[] ) {
      *
      * The loops ends when no clients are connected any more.
      */
+    int connectedClients = 0;
     do
     {
-        /* fill in your code */
+        ready_sockets = current_sockets;
+        printf("Waiting\n");
+        if (tcp_wait(&ready_sockets, server_sock + 1) < 0) {
+            fprintf(stderr, "Error proxy main: tcp_wait: %s\n", strerror(errno));
+        }
+
+        printf("JHER HAR VENTET\n");
+        
+        for (int i=0; i<=max_fd; ++i) {
+            if (FD_ISSET(i, &ready_sockets)){
+                printf("HEiASDASDASDA jeg er na inne i FDISSET\n");
+                printf("HEI FAEN HER ER I%d\n", i);
+                if (i == server_sock) {
+                    int client_sock = handleNewClient(server_sock);
+                    if (client_sock < 0) { continue; }
+                    if (client_sock > max_fd) { max_fd = client_sock; }
+
+                    printf("New client %d\n", client_sock);
+                    printf("New client FD %d\n", getFirst()->fd);
+                    printf("New client TYPE %c\n", getFirst()->type);
+                    printf("New client ID %c\n", getFirst()->ID);
+
+                    FD_SET(client_sock, &current_sockets);
+                    connectedClients++;
+                } else {
+                    printf("Handling client %d\n", i);
+                    handleClient(findByFD(i));
+                    FD_CLR(i, &current_sockets);                    
+                    connectedClients--;
+                }
+            }
+        }
+        
     }
-    while( 1 /* fill in your termination condition */ );
+    while(connectedClients);
+    printf("JER hARE ferdig med lokken\n");
 
     /* add your cleanup code */
+    while (start) { removeClient(start); }
 
     tcp_close( server_sock );
 
