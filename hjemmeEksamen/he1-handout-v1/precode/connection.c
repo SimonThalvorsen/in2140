@@ -8,6 +8,7 @@
  * You can add function, definition etc. as required.
  */
 #include "connection.h"
+#include <bits/types/struct_timeval.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,7 +48,7 @@ int tcp_connect( char* hostname, int port ) {
 int tcp_read( int sock, char* buffer, int n ) {
     int bytes = read(sock, buffer, n);
     if (bytes == 0) {
-        fprintf(stderr, "Error reading socket: EOF");
+        fprintf(stderr, "Error reading socket: EOF\n");
         return bytes;
     } else if (bytes < 0) {
         fprintf(stderr, "Error reading from socket: %s\n", strerror(errno));
@@ -97,7 +98,7 @@ int tcp_create_and_listen( int port ) {
         fprintf(stderr, "Error tcp_create_and_listen: Bind : %s\n", strerror(errno));
         return -1;
     }
-    rc = listen(sock, 26); // Uncertain about N connection request, placeholder 26, since 26 is max clients
+    rc = listen(sock, 5); // Uncertain about N connection request, placeholder 26, since 26 is max clients
     return sock;
 }
 
@@ -121,16 +122,15 @@ int tcp_wait( fd_set* waiting_set, int wait_end ) {
 }
 
 int tcp_wait_timeout( fd_set* waiting_set, int wait_end, int seconds ) {
-    printf("HUBBA HUBBA\n");
     struct timeval timeval;
     timeval.tv_sec = seconds;
+    timeval.tv_usec = 0;
     int ret;
     printf("set: %d\n", wait_end);
     printf("sec     : %d\n", seconds);
 
     ret = select(wait_end, waiting_set, NULL, NULL, &timeval);
 
-    printf("heisan hoop jeg har ret verdi: %d\n", ret);
     if (ret < 0) {
         fprintf(stderr, "Error tcp_wait_timeout\nSelect failed: %s\n", strerror(errno));
     }

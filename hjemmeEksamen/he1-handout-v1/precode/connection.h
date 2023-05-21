@@ -73,5 +73,5 @@ int tcp_wait( fd_set* waiting_set, int wait_end );
 /* Similar to the function tcp_wait, but waits at most timeout seconds
  * before returning.
  */
-int tcp_wait_timeout( fd_set* waiting_set, int wait_end, int timeout );
+int tcp_wait_timeout( fd_set* waiting_set, int wait_end, int seconds );
 
