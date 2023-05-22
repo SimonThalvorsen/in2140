@@ -7,7 +7,7 @@
 
 #!/bin/bash
 
-xterm -ls -e "../proxy 7655" &
+xterm -ls -hold -e "../proxy 7655" &
 
 read -n 1 -p "Press key when proxy has started."
 

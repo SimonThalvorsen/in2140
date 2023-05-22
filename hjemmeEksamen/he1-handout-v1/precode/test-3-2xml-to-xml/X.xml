@@ -2,6 +2,16 @@
   <source="A" />
   <dest="X" />
   <semester="2" />
+  <courses>
+    <course="IN1000" />
+    <course="IN1010" />
+    <course="IN1020" />
+    <course="IN1030" />
+    <course="IN1050" />
+    <course="IN1060" />
+    <course="IN1080" />
+    <course="IN1910" />
+  </courses>
 </record>
 
 <record>
@@ -10,6 +20,12 @@
   <id="9724" />
   <group="7868" />
   <grade="PhD" />
+  <courses>
+    <course="IN1010" />
+    <course="IN1060" />
+    <course="IN1080" />
+    <course="IN1900" />
+  </courses>
 </record>
 
 <record>
@@ -17,6 +33,11 @@
   <dest="X" />
   <group="756" />
   <semester="11" />
+  <courses>
+    <course="IN1080" />
+    <course="IN1140" />
+    <course="IN1900" />
+  </courses>
 </record>
 
 <record>
@@ -39,6 +60,14 @@
   <group="2813" />
   <semester="28" />
   <grade="None" />
+  <courses>
+    <course="IN1000" />
+    <course="IN1020" />
+    <course="IN1030" />
+    <course="IN1050" />
+    <course="IN1080" />
+    <course="IN1150" />
+  </courses>
 </record>
 
 <record>
@@ -46,6 +75,10 @@
   <dest="X" />
   <id="3075" />
   <semester="18" />
+  <courses>
+    <course="IN1010" />
+    <course="IN1150" />
+  </courses>
 </record>
 
 <record>
@@ -58,6 +91,13 @@
   <source="B" />
   <dest="X" />
   <semester="3" />
+  <courses>
+    <course="IN1030" />
+    <course="IN1080" />
+    <course="IN1150" />
+    <course="IN1900" />
+    <course="IN1910" />
+  </courses>
 </record>
 
 <record>
@@ -65,6 +105,12 @@
   <dest="X" />
   <id="2647" />
   <semester="18" />
+  <courses>
+    <course="IN1020" />
+    <course="IN1140" />
+    <course="IN1900" />
+    <course="IN1910" />
+  </courses>
 </record>
 
 <record>
@@ -72,6 +118,14 @@
   <dest="X" />
   <id="5562" />
   <grade="Master" />
+  <courses>
+    <course="IN1010" />
+    <course="IN1020" />
+    <course="IN1060" />
+    <course="IN1080" />
+    <course="IN1150" />
+    <course="IN1910" />
+  </courses>
 </record>
 
 <record>
@@ -86,6 +140,11 @@
   <dest="X" />
   <id="3596" />
   <semester="22" />
+  <courses>
+    <course="IN1050" />
+    <course="IN1080" />
+    <course="IN1910" />
+  </courses>
 </record>
 
 <record>
@@ -100,5 +159,13 @@
   <id="1311" />
   <semester="27" />
   <grade="Master" />
+  <courses>
+    <course="IN1000" />
+    <course="IN1010" />
+    <course="IN1030" />
+    <course="IN1060" />
+    <course="IN1140" />
+    <course="IN1900" />
+  </courses>
 </record>
 

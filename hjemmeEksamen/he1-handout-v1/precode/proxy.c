@@ -328,9 +328,10 @@ int main( int argc, char* argv[] ) {
     while(connectedClients);
 
     /* add your cleanup code */
-    // Clients are removed when they no longer send data
+    // Clients are removed when they no longer send data, line 321
 
     tcp_close( server_sock );
+    printf("Server socket closed.\nExiting...\n");
 
     return 0;
 }

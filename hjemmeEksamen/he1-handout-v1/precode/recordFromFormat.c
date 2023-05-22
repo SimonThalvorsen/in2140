@@ -14,19 +14,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+int validCourse ( char* start, char* stop, char* course) {
+    char *courseStart = strstr(start, course);
+    if (courseStart < stop && courseStart > start) {
+        return 1;
+    }
+    return 0;
+}
+
 Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
     printf("HEISANN HOPP JEG SKAL LAGE DIN RECORD IDAG!!!\n%s\n", buffer);
     struct Record *rec = newRecord();
     const char *xmlStr = buffer;
     char *strStart;
     char *strEnd;  
-    //char *record = strstr(xmlStr, "</record>");
-    /*
-    if (!strstr(xmlStr, "</record>")) {
-        fprintf(stderr, "Incomplete record: No closing tag");
+
+    char *recordStart = strstr(xmlStr, "<record>");
+    char *recordEnd = strstr(xmlStr, "</record>");
+    int totSize = recordEnd + strlen("</record>") - recordStart;
+    if (!(recordStart && recordEnd)) {
+        //Invalid record
         return NULL;
-        }
-    */
+    }
     
     strStart = strstr(xmlStr, "source=\"");
     if (strStart) {
@@ -60,7 +69,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("id: %d", *buf);
+        printf("id: %d\n", *buf);
         setId(rec, (uint32_t) atoi(buf));
     }
     strStart = strstr(xmlStr, "group=\"");
@@ -70,7 +79,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("group: %d", *buf);
+        printf("group: %d\n", *buf);
         setGroup(rec, (uint32_t) atoi(buf));
     }
     strStart = strstr(xmlStr, "semester=\"");
@@ -80,7 +89,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("semester: %d", *buf);
+        printf("semester: %d\n", *buf);
         setSemester(rec, (uint8_t) atoi(buf));
     }
     strStart = strstr(xmlStr, "grade=\"");
@@ -103,8 +112,27 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
             default:
                 break;
         }
-        printf("grade: %d", size);
+        printf("grade: %d\n", size);
     }
+    strStart = strstr(xmlStr, "<courses>");
+    strEnd = strstr(xmlStr, "</courses>");
+    if (strStart < recordStart || strEnd > recordEnd) { strStart = NULL; strEnd = NULL; }
+    if (strStart && strEnd) {
+        if (validCourse(strStart, strEnd, "IN1000")){ setCourse(rec, Course_IN1000); }
+        if (validCourse(strStart, strEnd, "IN1010")){ setCourse(rec, Course_IN1010); }        
+        if (validCourse(strStart, strEnd, "IN1020")){ setCourse(rec, Course_IN1020); }        
+        if (validCourse(strStart, strEnd, "IN1030")){ setCourse(rec, Course_IN1030); }        
+        if (validCourse(strStart, strEnd, "IN1050")){ setCourse(rec, Course_IN1050); }        
+        if (validCourse(strStart, strEnd, "IN1060")){ setCourse(rec, Course_IN1060); }        
+        if (validCourse(strStart, strEnd, "IN1080")){ setCourse(rec, Course_IN1080); }        
+        if (validCourse(strStart, strEnd, "IN1140")){ setCourse(rec, Course_IN1140); }        
+        if (validCourse(strStart, strEnd, "IN1150")){ setCourse(rec, Course_IN1150); }        
+        if (validCourse(strStart, strEnd, "IN1900")){ setCourse(rec, Course_IN1900); }        
+        if (validCourse(strStart, strEnd, "IN1910")){ setCourse(rec, Course_IN1910); }        
+        printf("course: %d\n", rec->courses);
+    }
+    *bytesread = totSize;
+    
     printf("TAKK FOR AT DU VENTEt, RECORDEN DIN ER FERDIG!!\n");
     return rec;
 }
