@@ -3,20 +3,20 @@
 
 #!/bin/bash
 
-xterm -ls -e "../proxy 7653" &
+xterm -ls -e "valgrind --leak-check=full ../proxy 7777" &
 
 read -n 1 -p "Press key when proxy has started."
 
-xterm -ls -e "../anyReceiver W X 127.0.0.1 7653 30" &
+xterm -ls -e "../anyReceiver W X 127.0.0.1 7777 30" &
 sleep 1
-xterm -ls -e "../anyReceiver X X 127.0.0.1 7653 30" &
+xterm -ls -e "../anyReceiver X X 127.0.0.1 7777 30" &
 sleep 1
-xterm -ls -e "../anyReceiver Y B 127.0.0.1 7653 30" &
+xterm -ls -e "../anyReceiver Y B 127.0.0.1 7777 30" &
 sleep 1
-xterm -ls -e "../anyReceiver Z B 127.0.0.1 7653 30" &
+xterm -ls -e "../anyReceiver Z B 127.0.0.1 7777 30" &
 sleep 5
 
-xterm -ls -e "../binSender B 127.0.0.1 7653" &
+xterm -ls -e "../binSender B 127.0.0.1 7777" &
 
-../xmlSender A 127.0.0.1 7653
+../xmlSender A 127.0.0.1 7777
 

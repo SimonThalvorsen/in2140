@@ -36,6 +36,7 @@ struct Client {
     char ID, type;
     char buf[BUFSIZ];
     int bytesRead;
+    int isReciever;
 };
 
 struct Client *start;
@@ -44,11 +45,16 @@ int numClients = 0;
 struct Client* getFirst() {
     return start;
 }
+/* Pushes the client to the stack
+ */
 void push(struct Client *c) {
     struct Client *tmp = start;
     start = c;
     start->next = tmp;
 }
+
+/* Remves the first client and returns a pointer
+ */
 struct Client* pop() {
     if (start) {
         struct Client *tmp = start;
@@ -57,6 +63,11 @@ struct Client* pop() {
     }
     return NULL;
 }
+
+/* Serches for client bases on fd.
+ * Returns the client with specified fd,
+ * or NULL in case the fd is not defined in any clients
+ */
 struct Client* findByFD(int fd) {
     if (start->fd == fd) { return start; }
     struct Client *tmp = start;
@@ -66,6 +77,11 @@ struct Client* findByFD(int fd) {
     }
     return (tmp->fd == start->fd) ? NULL : tmp;
 }
+
+/* Serches for client bases on id.
+ * Returns the client with specified id,
+ * or NULL in case the id is not defined in any clients
+ */
 struct Client* findByID(char ID) {
     if (start->ID == ID) { return start; }
     struct Client *tmp = start;
@@ -75,8 +91,12 @@ struct Client* findByID(char ID) {
     }
     return (tmp->ID == start->ID) ? NULL : tmp;
 }
+
+/* Removed a client from the stack given a client*,
+ * free is called and fd is closed.
+ */
 void stackRemove(struct Client *c) {
-    tcp_close(c->fd); //TODO, Trenger jeg denne?
+    tcp_close(c->fd); 
 
     if (c->next == NULL) { 
         free(c);
@@ -185,12 +205,12 @@ void removeClient( Client* client ) {
  * *** The parameters and return values of this functions can be changed. ***
  */
 void forwardMessage( Record* msg ) {
-    printf("BROR skal forwarde IKKE\n");
     char *buf;
     int bufsiz;
     if (!msg) { deleteRecord(msg); }
     if (!msg->dest) { deleteRecord(msg); return; }
     struct Client *dest = findByID(msg->dest);
+    dest->isReciever = 1;
     
     if (dest->type == 'X') {
         buf = recordToXML(msg, &bufsiz);
@@ -203,8 +223,6 @@ void forwardMessage( Record* msg ) {
     }
     free(buf);
     deleteRecord(msg);
-    printf("HERI JEG HAR SENDE return to main\n");
-    //free(dest);
 }
 
 /*
@@ -227,6 +245,9 @@ int handleClient( Client* client ) {
     if (client == NULL) {
         fprintf(stderr, "handleClient: Client is null\n");
         return -1; }
+    if (client->isReciever) { 
+        printf("Reciever timed out\n");
+        return 0; }
 
     int read;
 
@@ -241,14 +262,16 @@ int handleClient( Client* client ) {
     if (client->type == 'X') {
         struct Record *r = XMLtoRecord(client->buf, BUFSIZ, &client->bytesRead);
 
-        printf("Forwarding -> XML\n");
-        if (r) { forwardMessage(r); }
+        if (r) { 
+            printf("Forwarding -> XML\n\n");
+            forwardMessage(r); }
 
     } else if (client->type == 'B') {
         struct Record *r = BinaryToRecord(client->buf, BUFSIZ, &client->bytesRead);
 
-        printf("Forwarding -> BINARY\n");
-        if (r) { forwardMessage(r); }
+        if (r) {
+            printf("Forwarding -> BINARY\n\n");
+            forwardMessage(r); }
     }
     return read;
 
@@ -301,7 +324,7 @@ int main( int argc, char* argv[] ) {
                 if (fd == server_sock) {
                     int clientSock;
                     clientSock = handleNewClient(server_sock);
-                    printf("New client on sock: %d\n", clientSock);
+                    printf("\nNew client on sock: %d\n", clientSock);
                     FD_SET(clientSock, &currentSockets);
                     if (clientSock < 0) { continue; }
                     if (clientSock > max_fd) { max_fd = clientSock; }
@@ -312,7 +335,7 @@ int main( int argc, char* argv[] ) {
                     connectedClients++;
 
                 } else {
-                    printf("Handling client socket: %d\n", fd);
+                    printf("\nHandling client socket: %d\n", fd);
 
                     int check = handleClient(findByFD(fd));
                     if (!check){
@@ -327,8 +350,7 @@ int main( int argc, char* argv[] ) {
     }
     while(connectedClients);
 
-    /* add your cleanup code */
-    // Clients are removed when they no longer send data, line 321
+    // Clients are removed when they no longer send data, line 335, no need for explicit cleanup.
 
     tcp_close( server_sock );
     printf("Server socket closed.\nExiting...\n");

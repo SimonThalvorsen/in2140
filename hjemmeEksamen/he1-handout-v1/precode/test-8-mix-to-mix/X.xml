@@ -1,0 +1,21 @@
+<record>
+  <source="A" />
+  <dest="X" />
+  <group="5794" />
+  <grade="Master" />
+  <courses>
+    <course="IN1000" />
+    <course="IN1010" />
+    <course="IN1020" />
+    <course="IN1030" />
+    <course="IN1050" />
+    <course="IN1910" />
+  </courses>
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <semester="25" />
+</record>
+

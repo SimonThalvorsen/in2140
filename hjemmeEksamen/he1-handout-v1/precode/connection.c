@@ -16,14 +16,6 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
-void check_error(int val, char* msg) {
-  if (val < 0) {
-    fprintf(stderr, "%s failed. Errno-value: (%d)\n", msg, errno);
-    fprintf(stderr, "%s : %s\n", msg, (char*) strerror(errno));
-    return;
-    }
-  return;
-}
 
 int tcp_connect( char* hostname, int port ) {
     struct sockaddr_in server_addr;
@@ -48,7 +40,8 @@ int tcp_connect( char* hostname, int port ) {
 int tcp_read( int sock, char* buffer, int n ) {
     int bytes = read(sock, buffer, n);
     if (bytes == 0) {
-        fprintf(stderr, "Error reading socket: EOF\n");
+        printf("0 bytes recieved\n");
+        //fprintf(stderr, "Error reading socket: EOF\n");
         return bytes;
     } else if (bytes < 0) {
         fprintf(stderr, "Error reading from socket: %s\n", strerror(errno));
@@ -112,9 +105,7 @@ int tcp_accept( int server_sock ) {
 }
 
 int tcp_wait( fd_set* waiting_set, int wait_end ) {
-    printf("jeg venter som faen\n");
     int ret = select(wait_end, waiting_set, NULL, NULL, NULL);
-    printf("jeg har venta som faaaen %d\n", ret);
     if (ret < 0) {
         fprintf(stderr, "Error tcp_wait: %s\n", strerror(errno));
     }
@@ -126,8 +117,6 @@ int tcp_wait_timeout( fd_set* waiting_set, int wait_end, int seconds ) {
     timeval.tv_sec = seconds;
     timeval.tv_usec = 0;
     int ret;
-    printf("set: %d\n", wait_end);
-    printf("sec     : %d\n", seconds);
 
     ret = select(wait_end, waiting_set, NULL, NULL, &timeval);
 

@@ -14,6 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+/* Returns 1 if the course code is inside specified string/memory area.
+ * Else 0 is returned.
+ */
 int validCourse ( char* start, char* stop, char* course) {
     char *courseStart = strstr(start, course);
     if (courseStart < stop && courseStart > start) {
@@ -23,7 +27,7 @@ int validCourse ( char* start, char* stop, char* course) {
 }
 
 Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
-    printf("HEISANN HOPP JEG SKAL LAGE DIN RECORD IDAG!!!\n%s\n", buffer);
+    printf("Creating a new record...\n");
     struct Record *rec = newRecord();
     const char *xmlStr = buffer;
     char *strStart;
@@ -41,14 +45,14 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
     if (strStart) {
         char src;
         memcpy(&src, strStart + strlen("source=\""), sizeof(char));
-        printf("Source: %c\n", src);
+        printf("\tSource: %c\n", src);
         setSource(rec, src);
     }
     strStart = strstr(xmlStr, "dest=\"");
     if (strStart) {        
         char dst;
         memcpy(&dst, strStart + strlen("dest=\""), sizeof(char));
-        printf("Dest: %c\n", dst);
+        printf("\tDest: %c\n", dst);
         if (!dst) {return NULL;} // No destination = invalid record
         setDest(rec, dst);
     }
@@ -59,7 +63,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("Name: %s\n", buf);
+        printf("\tName: %s\n", buf);
         setUsername(rec, buf);
     }
     strStart = strstr(xmlStr, "id=\"");
@@ -69,7 +73,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("id: %d\n", *buf);
+        printf("\tID: %d\n", *buf);
         setId(rec, (uint32_t) atoi(buf));
     }
     strStart = strstr(xmlStr, "group=\"");
@@ -79,7 +83,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("group: %d\n", *buf);
+        printf("\tGroup: %d\n", *buf);
         setGroup(rec, (uint32_t) atoi(buf));
     }
     strStart = strstr(xmlStr, "semester=\"");
@@ -89,7 +93,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         char buf[len];
         buf[len] = '\0';
         memcpy(&buf, strEnd-len, len); 
-        printf("semester: %d\n", *buf);
+        printf("\tSemester: %d\n", *buf);
         setSemester(rec, (uint8_t) atoi(buf));
     }
     strStart = strstr(xmlStr, "grade=\"");
@@ -112,7 +116,7 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
             default:
                 break;
         }
-        printf("grade: %d\n", size);
+        printf("\tGrade: %d\n", size);
     }
     strStart = strstr(xmlStr, "<courses>");
     strEnd = strstr(xmlStr, "</courses>");
@@ -129,18 +133,18 @@ Record* XMLtoRecord( char* buffer, int bufSize, int* bytesread ) {
         if (validCourse(strStart, strEnd, "IN1150")){ setCourse(rec, Course_IN1150); }        
         if (validCourse(strStart, strEnd, "IN1900")){ setCourse(rec, Course_IN1900); }        
         if (validCourse(strStart, strEnd, "IN1910")){ setCourse(rec, Course_IN1910); }        
-        printf("course: %d\n", rec->courses);
+        printf("\tcourse: %d\n", rec->courses);
     }
     *bytesread = totSize;
     
-    printf("TAKK FOR AT DU VENTEt, RECORDEN DIN ER FERDIG!!\n");
+    printf("...Record created.\n");
     return rec;
 }
 
 
 Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
+    printf("Creating a new record...\n");
     struct Record *record = newRecord(); 
-    printf("HEISANN HOPP JEG SKAL LAGE DIN RECORD IDAG!!!\n%s\n", buffer);
     
     char flag;
     memcpy(&flag, buffer, 1);
@@ -154,7 +158,7 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         memcpy(&src, buffer, 1);
         buffer += sizeof(char);
         *bytesread += sizeof(char);
-        printf("Source: %c\n", src);
+        printf("\tSource: %c\n", src);
         setSource(record, src);
     }
     if (flag & FLAG_DST) {
@@ -162,7 +166,7 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         memcpy(&dst, buffer, 1);
         buffer += sizeof(char);
         *bytesread += sizeof(char);
-        printf("Dest: %c\n", dst);
+        printf("\tDest: %c\n", dst);
         setDest(record, dst);
     }
     if (flag & FLAG_USERNAME){
@@ -171,14 +175,14 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         nameLen = htonl(nameLen);
         buffer += sizeof(uint32_t);
        *bytesread += sizeof(uint32_t);
-        printf("Namesize: %d\n", nameLen);
+        printf("\tNamesize: %d\n", nameLen);
 
         char *name = malloc(nameLen);
         name[nameLen] = '\0';
         memcpy(name, buffer, nameLen);
         buffer += nameLen;
         *bytesread += nameLen;
-        printf("Name: %s\n", name);
+        printf("\tName: %s\n", name);
         setUsername(record, name);
         free(name);
     }
@@ -188,7 +192,7 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         id = ntohl(id);
         *bytesread += sizeof(uint32_t);
         buffer += sizeof(uint32_t);
-        printf("id: %d\n", id);
+        printf("\tID: %d\n", id);
         setId(record, id);
     }
     if (flag & FLAG_GROUP) {
@@ -197,7 +201,7 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         group = ntohl(group);
         buffer += sizeof(uint32_t);
         *bytesread += sizeof(uint32_t);
-        printf("group: %d\n", group);
+        printf("\tGroup: %d\n", group);
         setGroup(record, group);
     }
     if (flag & FLAG_SEMESTER) {
@@ -205,7 +209,7 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         memcpy(&semester, buffer, sizeof(uint8_t));
         buffer += sizeof(uint8_t);
         *bytesread += sizeof(uint8_t);
-        printf("semester: %d\n", semester);
+        printf("\tSemester: %d\n", semester);
         setSemester(record, semester);
     }
     if (flag & FLAG_GRADE) {
@@ -213,7 +217,7 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         memcpy(&grade, buffer, sizeof(char));
         buffer += sizeof(char);
         *bytesread += sizeof(char); 
-        printf("grade: %d\n", grade);
+        printf("\tGrade: %d\n", grade);
         setGrade(record, grade);
     } 
     if (flag & FLAG_COURSES) {
@@ -222,11 +226,11 @@ Record* BinaryToRecord( char* buffer, int bufSize, int* bytesread ) {
         courses = ntohs(courses);
         buffer += sizeof(uint16_t);
         *bytesread += sizeof(uint16_t);
-        printf("courses: %d\n", courses);
+        printf("\tCourses: %d\n", courses);
         setCourse(record, courses);
     }
 
-    printf("TAKK FOR AT DU VENTET, RECORDEN DIN ER FERDIG!!\n");
+    printf("...Record created.\n");
     return record;
 }
 
