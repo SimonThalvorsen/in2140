@@ -1,0 +1,104 @@
+<record>
+  <source="A" />
+  <dest="X" />
+  <semester="2" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <id="9724" />
+  <group="7868" />
+  <grade="PhD" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <group="756" />
+  <semester="11" />
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <grade="Master" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <id="2515" />
+  <grade="Bachelor" />
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <id="9628" />
+  <group="2813" />
+  <semester="28" />
+  <grade="None" />
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <id="3075" />
+  <semester="18" />
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <semester="1" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <semester="3" />
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <id="2647" />
+  <semester="18" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <id="5562" />
+  <grade="Master" />
+</record>
+
+<record>
+  <source="A" />
+  <dest="X" />
+  <id="2402" />
+  <group="5337" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <id="3596" />
+  <semester="22" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <grade="None" />
+</record>
+
+<record>
+  <source="B" />
+  <dest="X" />
+  <id="1311" />
+  <semester="27" />
+  <grade="Master" />
+</record>
+

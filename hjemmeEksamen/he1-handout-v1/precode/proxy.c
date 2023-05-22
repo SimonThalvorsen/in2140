@@ -35,9 +35,10 @@ struct Client {
     int fd;
     char ID, type;
     char buf[BUFSIZ];
+    int bytesRead;
 };
 
-struct Client *start = NULL;
+struct Client *start;
 int numClients = 0;
 
 struct Client* getFirst() {
@@ -119,7 +120,7 @@ void usage( char* cmd )
  * *** The parameters and return values of this functions can be changed. ***
  */
  int handleNewClient( int server_sock ) {
-    char buffer[sizeof(char)];
+    char buf[sizeof(char)];
     int fd;
     int read;
     fd = tcp_accept(server_sock);
@@ -128,26 +129,28 @@ void usage( char* cmd )
         return -1;
     }
     struct Client *c = malloc(sizeof(struct Client));
-
+    c->bytesRead = 0;
     c->fd = fd;
 
-    read = tcp_read(fd, buffer, 1);
+    read = tcp_read(fd, buf, 1);
     if (read < 0) {
         fprintf(stderr, "handle new client, tcp_read failed\n");
         return -1;
     }
-    memcpy(&c->type, buffer, 1);
+    memcpy(&c->type, buf, 1);
     
-    read = tcp_read(fd, buffer, 1);
+    read = tcp_read(fd, buf, 1);
     if (read < 0) {
         fprintf(stderr, "handle new client, tcp_read failed\n");
         return -1;
     }
-    memcpy(&c->ID, buffer, 1);
+    memcpy(&c->ID, buf, 1);
 
-    printf("New client FD:   %d\n", c->fd);
-    printf("New client TYPE: %c\n", c->type);
-    printf("New client ID:   %c\n", c->ID);
+
+    //printf("New client FD:   %d\n", c->fd);
+    //printf("New client TYPE: %c\n", c->type);
+    //printf("New client ID:   %c\n", c->ID);
+
     push(c);
     return fd;
 }
@@ -182,33 +185,23 @@ void removeClient( Client* client ) {
  * *** The parameters and return values of this functions can be changed. ***
  */
 void forwardMessage( Record* msg ) {
-    printf("BROR FORWARDER IKKE\n");
+    printf("BROR skal forwarde IKKE\n");
     char *buf;
     int bufsiz;
     if (!msg) { deleteRecord(msg); }
+    if (!msg->dest) { deleteRecord(msg); return; }
     struct Client *dest = findByID(msg->dest);
     
     if (dest->type == 'X') {
         buf = recordToXML(msg, &bufsiz);
-        printf("DETTE ER DET JEG SKAL SENDE TIL DEG KJØRE VENN haapåer det er lesbart!\n%s\n", buf);
-
-        if (buf) { tcp_write(dest->fd, buf, bufsiz); }
-
-        deleteRecord(msg);
-        return;
+        if (buf) { tcp_write_loop(dest->fd, buf, bufsiz); }
 
     } else if (dest->type == 'B') {
         buf = recordToBinary(msg, &bufsiz);
-        printf("prewirte\n");
-
         if (buf) { tcp_write_loop(dest->fd, buf, bufsiz); }
 
-        printf("post prewirte\n");
-
-        deleteRecord(msg);
-        return;
-        printf("Ferri med wtr\n");
     }
+    free(buf);
     deleteRecord(msg);
     printf("HERI JEG HAR SENDE return to main\n");
     //free(dest);
@@ -230,41 +223,35 @@ void forwardMessage( Record* msg ) {
  *
  * *** The parameters and return values of this functions can be changed. ***
  */
-void handleClient( Client* client ) {
+int handleClient( Client* client ) {
     if (client == NULL) {
         fprintf(stderr, "handleClient: Client is null\n");
-        return; }
+        return -1; }
 
     int read;
-    int bytesRead = 0;
 
-    do {
     
     read = tcp_read(client->fd, client->buf, BUFSIZ);
-    if (read == 0) { return; } // to avoid sending last record twice
+    if (read == 0) { return read; }
     if (read < 0) {
         fprintf(stderr, "handle client, tcp_read failed\n");
-        removeClient(client);
-        return;
+        return -1;
     }
-    printf("HEI JEG HAR LESET %s\n", client->buf);
-    printf("HEI JEG HAR LESET %d\n", read);
 
     if (client->type == 'X') {
+        struct Record *r = XMLtoRecord(client->buf, BUFSIZ, &client->bytesRead);
+
         printf("Forwarding -> XML\n");
-        
-        struct Record *r = XMLtoRecord(client->buf, BUFSIZ, &bytesRead);
         if (r) { forwardMessage(r); }
 
     } else if (client->type == 'B') {
-        printf("Forwarding -> BINARY\n");
+        struct Record *r = BinaryToRecord(client->buf, BUFSIZ, &client->bytesRead);
 
-        struct Record *r = BinaryToRecord(client->buf, BUFSIZ, &bytesRead);
+        printf("Forwarding -> BINARY\n");
         if (r) { forwardMessage(r); }
     }
-    
+    return read;
 
-    } while (read);
 }
 
 int main( int argc, char* argv[] ) {
@@ -283,11 +270,11 @@ int main( int argc, char* argv[] ) {
     int max_fd = server_sock; 
 
     /* add your initialization code */
-    fd_set current_sockets, ready_sockets;
+    fd_set currentSockets, readySockets;
 
 
-    FD_ZERO(&current_sockets);
-    FD_SET(server_sock, &current_sockets);
+    FD_ZERO(&currentSockets);
+    FD_SET(server_sock, &currentSockets);
     
     /*
      * The following part is the event loop of the proxy. It waits for new connections,
@@ -300,55 +287,48 @@ int main( int argc, char* argv[] ) {
      * The loops ends when no clients are connected any more.
      */
     int connectedClients = 0;
-    int activity;
     do
     {
-        ready_sockets = current_sockets;
-        activity = 0;
-        printf("Waiting\n");
-        activity = tcp_wait(&ready_sockets, max_fd + 1) ;
-        if (activity < 0) {
+        readySockets = currentSockets;
+        printf("Waiting for connections: \n");
+        if (tcp_wait(&readySockets, max_fd + 1) < 0) {
             fprintf(stderr, "Error proxy main: tcp_wait: %s\n", strerror(errno));
         }
         
 
         for (int fd=0; fd<=max_fd; ++fd) {
-            printf("HEI I%d\n", fd);
-            if (FD_ISSET(fd, &ready_sockets)){
-                activity++;
-                printf("HEI FAEN HER ER I%d\n\n\n", fd);
+            if (FD_ISSET(fd, &readySockets)){
                 if (fd == server_sock) {
-                    int client_sock;
-                    client_sock = handleNewClient(server_sock);
-                    printf("New client on sock: %d\n", client_sock);
-                    FD_SET(client_sock, &current_sockets);
-                    if (client_sock < 0) { continue; }
-                    if (client_sock > max_fd) { max_fd = client_sock; }
+                    int clientSock;
+                    clientSock = handleNewClient(server_sock);
+                    printf("New client on sock: %d\n", clientSock);
+                    FD_SET(clientSock, &currentSockets);
+                    if (clientSock < 0) { continue; }
+                    if (clientSock > max_fd) { max_fd = clientSock; }
 
-                    printf("New client FD %d\n", getFirst()->fd);
                     printf("New client TYPE %c\n", getFirst()->type);
                     printf("New client ID %c\n\n\n", getFirst()->ID);
 
                     connectedClients++;
 
                 } else {
-                    printf("Handling client %d\n", fd);
-                    handleClient(findByFD(fd));
-                    printf("Just handled this bitch, removing the FD ong\n");
-                    FD_CLR(fd, &current_sockets);                    
-                    printf("back 2 business\n");
-                    connectedClients--;
+                    printf("Handling client socket: %d\n", fd);
+
+                    int check = handleClient(findByFD(fd));
+                    if (!check){
+                        connectedClients--;
+                        FD_CLR(fd, &currentSockets);                    
+                        removeClient(findByFD(fd));
+                        printf("Client removed socket: %d\n", fd);
+                    }
                 }
             }
         }
-        
     }
     while(connectedClients);
 
-    printf("JER BARE ferdig med lokken\n");
-
     /* add your cleanup code */
-    while (start) { removeClient(start); }
+    // Clients are removed when they no longer send data
 
     tcp_close( server_sock );
 
